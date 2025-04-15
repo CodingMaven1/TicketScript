@@ -12,7 +12,9 @@ from twilio.rest import Client
 from dotenv import load_dotenv
 
 # Load environment variables
-load_dotenv()
+env_path = os.path.join(os.path.dirname(__file__), '.env')
+print(f"Looking for .env file at: {env_path}")
+load_dotenv(dotenv_path=env_path, override=True)
 
 # Twilio credentials
 TWILIO_ACCOUNT_SID = os.getenv('TWILIO_ACCOUNT_SID')
@@ -24,6 +26,9 @@ YOUR_PHONE_NUMBER = os.getenv('YOUR_PHONE_NUMBER')
 TARGET_DATES = ['Apr 24', 'May 3', 'May 13']
 TARGET_TEAMS = ['Rajasthan Royals', 'Chennai Super Kings', 'Sunrisers Hyderabad']
 URL = 'https://shop.royalchallengers.com/ticket'
+
+# Track total notifications sent
+total_notifications = 0
 
 def setup_driver():
     chrome_options = Options()
@@ -93,6 +98,7 @@ def setup_driver():
             raise e
 
 def send_notification(message):
+    global total_notifications
     try:
         client = Client(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
         
@@ -110,7 +116,8 @@ def send_notification(message):
             to=YOUR_PHONE_NUMBER
         )
         
-        print(f"Notification sent: {message}")
+        total_notifications += 1
+        print(f"Notification sent: {message} (Total notifications: {total_notifications}/3)")
     except Exception as e:
         print(f"Failed to send notification: {str(e)}")
 
@@ -162,6 +169,11 @@ def main():
         while True:
             print(f"\n{datetime.now()}: Checking for tickets...")
             check_tickets()
+            
+            if total_notifications >= 3:
+                print("Maximum number of notifications (3) reached. Stopping monitoring.")
+                break
+                
             print(f"Next check in 60 seconds. Press Ctrl+C to exit.")
             time.sleep(60)  # Check every minute
     except KeyboardInterrupt:
